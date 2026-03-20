@@ -3,6 +3,19 @@ import pandas as pd
 import numpy as np
 import joblib
 
+# Compatibility shim for scikit-learn model unpickling when _RemainderColsList moved/removed
+try:
+    from sklearn.compose import _column_transformer as _ct
+    if not hasattr(_ct, "_RemainderColsList"):
+        class _RemainderColsList(list):
+            """Backwards compatibility for old sklearn ColumnTransformer remainder ads."""
+            pass
+
+        _ct._RemainderColsList = _RemainderColsList
+except Exception as shim_exc:
+    # We still continue; model load will raise if incompatible in other ways.
+    st.warning(f"Sklearn compatibility shim failed: {shim_exc}")
+
 # ----- Page Configuration -----
 st.set_page_config(
     page_title="Logistics Risk Mitigation Dashboard",
@@ -52,6 +65,8 @@ with col2:
     st.subheader("Environmental IoT Sensors")
     Temperature = st.number_input("Temperature (°C)", value=25.0)
     Humidity = st.number_input("Humidity (%)", value=50.0)
+    Latitude = st.number_input("Latitude", value=0.0, format="%.6f")
+    Longitude = st.number_input("Longitude", value=0.0, format="%.6f")
     
     st.subheader("Operational Metrics")
     Waiting_Time = st.number_input("Waiting Time (minutes)", value=15.0)
@@ -77,6 +92,8 @@ if st.button("Predict Logistics Delay Risk", type="primary"):
         "Inventory_Level": Inventory_Level,
         "Temperature": Temperature,
         "Humidity": Humidity,
+        "Latitude": Latitude,
+        "Longitude": Longitude,
         "Waiting_Time": Waiting_Time,
         "User_Transaction_Amount": User_Transaction_Amount,
         "User_Purchase_Frequency": User_Purchase_Frequency,
